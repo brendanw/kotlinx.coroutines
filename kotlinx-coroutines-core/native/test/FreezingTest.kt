@@ -4,10 +4,19 @@
 
 package kotlinx.coroutines
 
-import kotlin.test.*
-import kotlin.native.concurrent.*
+import kotlinx.coroutines.flow.collect
+import kotlinx.coroutines.flow.flow
+import kotlinx.coroutines.flow.flowOn
+import kotlin.native.concurrent.freeze
+import kotlin.native.concurrent.isFrozen
+import kotlin.test.Test
+import kotlin.test.assertEquals
+import kotlin.test.assertFalse
+import kotlin.test.assertTrue
 
 class FreezingTest : TestBase() {
+    private val dispatcher = newSingleThreadContext("WorkerCoroutineDispatcherTest")
+
     @Test
     fun testFreezeWithContextOther() = runTest {
         // create a mutable object referenced by this lambda
@@ -49,5 +58,15 @@ class FreezingTest : TestBase() {
         assertTrue(job.isActive)
         parent.cancel()
         assertTrue(job.isCancelled)
+    }
+
+    @Test
+    fun testFrozenCollector() = runBlocking<Unit>() {
+        flow {
+            emit(0)
+        }.flowOn(Dispatchers.Default)
+            .collect {
+                assert(this.isFrozen == true)
+            }
     }
 }
